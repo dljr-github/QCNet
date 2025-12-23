@@ -323,9 +323,9 @@ class QCNet(pl.LightningModule):
             eval_id = list(compress(list(chain(*data['agent']['id'])), eval_mask))
             if isinstance(data, Batch):
                 for i in range(data.num_graphs):
-                    self.test_predictions[data['scenario_id'][i]] = (pi_eval[i], {eval_id[i]: traj_eval[i]})
+                    self.test_predictions[data['scenario_id'][i]] = {eval_id[i]: (traj_eval[i], pi_eval[i])}
             else:
-                self.test_predictions[data['scenario_id']] = (pi_eval[0], {eval_id[0]: traj_eval[0]})
+                self.test_predictions[data['scenario_id']] = {eval_id[0]: (traj_eval[0], pi_eval[0])}
         else:
             raise ValueError('{} is not a valid dataset'.format(self.dataset))
 
