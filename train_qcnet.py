@@ -19,6 +19,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.strategies import DDPStrategy
 
 from datamodules import ArgoverseV2DataModule
+from datamodules import Venti3DDataModule
 from predictors import QCNet
 
 if __name__ == '__main__':
@@ -42,12 +43,28 @@ if __name__ == '__main__':
     parser.add_argument('--accelerator', type=str, default='auto')
     parser.add_argument('--devices', type=int, required=True)
     parser.add_argument('--max_epochs', type=int, default=64)
+    parser.add_argument('--ckpt_path', type=str, default=None,
+                        help='Path to pretrained checkpoint for finetuning')
+    parser.add_argument('--finetune_lr', type=float, default=None,
+                        help='Learning rate for finetuning (overrides checkpoint lr)')
     QCNet.add_model_specific_args(parser)
     args = parser.parse_args()
 
-    model = QCNet(**vars(args))
+    if args.ckpt_path is not None:
+        # Finetuning: load pretrained weights, but use current args for training config
+        print(f"Loading pretrained checkpoint from: {args.ckpt_path}")
+        model = QCNet.load_from_checkpoint(
+            args.ckpt_path,
+            dataset=args.dataset,  # Override dataset
+            lr=args.finetune_lr if args.finetune_lr else args.lr,
+            T_max=args.max_epochs,  # Reset LR scheduler
+            strict=False,  # Allow missing/extra keys if architecture differs slightly
+        )
+    else:
+        model = QCNet(**vars(args))
     datamodule = {
         'argoverse_v2': ArgoverseV2DataModule,
+        'venti3d': Venti3DDataModule,
     }[args.dataset](**vars(args))
     model_checkpoint = ModelCheckpoint(monitor='val_minFDE', save_top_k=5, mode='min')
     lr_monitor = LearningRateMonitor(logging_interval='epoch')

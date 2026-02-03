@@ -12,3 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from datamodules.argoverse_v2_datamodule import ArgoverseV2DataModule
+from datamodules.venti3d_datamodule import Venti3DDataModule

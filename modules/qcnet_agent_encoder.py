@@ -27,6 +27,7 @@ from layers.fourier_embedding import FourierEmbedding
 from utils import angle_between_2d_vectors
 from utils import weight_init
 from utils import wrap_angle
+from utils import get_num_agent_types
 
 
 class QCNetAgentEncoder(nn.Module):
@@ -58,7 +59,7 @@ class QCNetAgentEncoder(nn.Module):
         self.head_dim = head_dim
         self.dropout = dropout
 
-        if dataset == 'argoverse_v2':
+        if dataset in ('argoverse_v2', 'venti3d'):
             input_dim_x_a = 4
             input_dim_r_t = 4
             input_dim_r_pl2a = 3
@@ -66,8 +67,9 @@ class QCNetAgentEncoder(nn.Module):
         else:
             raise ValueError('{} is not a valid dataset'.format(dataset))
 
-        if dataset == 'argoverse_v2':
-            self.type_a_emb = nn.Embedding(10, hidden_dim)
+        if dataset in ('argoverse_v2', 'venti3d'):
+            num_agent_types = get_num_agent_types(dataset)
+            self.type_a_emb = nn.Embedding(num_agent_types, hidden_dim)
         else:
             raise ValueError('{} is not a valid dataset'.format(dataset))
         self.x_a_emb = FourierEmbedding(input_dim=input_dim_x_a, hidden_dim=hidden_dim, num_freq_bands=num_freq_bands)
@@ -101,7 +103,7 @@ class QCNetAgentEncoder(nn.Module):
         head_vector_a = torch.stack([head_a.cos(), head_a.sin()], dim=-1)
         pos_pl = data['map_polygon']['position'][:, :self.input_dim].contiguous()
         orient_pl = data['map_polygon']['orientation'].contiguous()
-        if self.dataset == 'argoverse_v2':
+        if self.dataset in ('argoverse_v2', 'venti3d'):
             vel = data['agent']['velocity'][:, :self.num_historical_steps, :self.input_dim].contiguous()
             length = width = height = None
             categorical_embs = [
@@ -111,7 +113,7 @@ class QCNetAgentEncoder(nn.Module):
         else:
             raise ValueError('{} is not a valid dataset'.format(self.dataset))
 
-        if self.dataset == 'argoverse_v2':
+        if self.dataset in ('argoverse_v2', 'venti3d'):
             x_a = torch.stack(
                 [torch.norm(motion_vector_a[:, :, :2], p=2, dim=-1),
                  angle_between_2d_vectors(ctr_vector=head_vector_a, nbr_vector=motion_vector_a[:, :, :2]),

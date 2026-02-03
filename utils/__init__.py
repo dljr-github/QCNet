@@ -22,3 +22,6 @@ from utils.graph import merge_edges
 from utils.graph import unbatch
 from utils.list import safe_list_index
 from utils.weight_init import weight_init
+from utils.config import get_num_agent_types
+from utils.config import get_num_polygon_types
+from utils.config import load_dataset_config

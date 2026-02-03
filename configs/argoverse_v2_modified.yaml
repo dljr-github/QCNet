@@ -1,0 +1,64 @@
+# Argoverse V2 Dataset Configuration - Venti3D Compatible
+# Maps AV2 agent types to Venti3D 6-type system for pretrain→finetune transfer
+
+agent_types:
+  - vehicle            # 0: vehicle, motorcyclist, bus, construction
+  - trailer            # 1: (unused in AV2, placeholder for embedding compatibility)
+  - industrial_vehicle # 2: (unused in AV2, placeholder for embedding compatibility)
+  - pedestrian         # 3: pedestrian
+  - static             # 4: static, riderless_bicycle
+  - unknown            # 5: cyclist, background, unknown
+
+polygon_types:
+  - VEHICLE     # 0: all lane types (matches venti3d)
+  - PEDESTRIAN  # 1: crosswalks (matches venti3d)
+
+# Maps Argoverse V2 lane type strings to polygon type index
+# All lane types map to VEHICLE (0) for Venti3D compatibility
+lane_type_mapping:
+  VEHICLE: 0    # VEHICLE lanes -> VEHICLE
+  BIKE: 0       # BIKE lanes -> VEHICLE (no separate type in venti3d)
+  BUS: 0        # BUS lanes -> VEHICLE (no separate type in venti3d)
+
+crosswalk_type: 1  # PEDESTRIAN (index 1)
+
+# Maps Argoverse V2 agent type strings to consolidated index
+agent_type_mapping:
+  vehicle: 0            # vehicle
+  pedestrian: 3         # pedestrian
+  motorcyclist: 0       # vehicle (motorized)
+  cyclist: 5            # unknown (no port equivalent)
+  bus: 0                # vehicle
+  static: 4             # static
+  background: 5         # unknown
+  construction: 0       # vehicle (like eng_veh.construct)
+  riderless_bicycle: 4  # static (stationary object)
+  unknown: 5            # unknown
+
+# Agent rendering config for visualization
+# Shapes: box, small_box, circle, tiny_circle
+agent_render_config:
+  0:  # vehicle
+    shape: box
+    length: 4.5
+    width: 2.0
+  1:  # trailer (placeholder)
+    shape: box
+    length: 12.0
+    width: 2.5
+  2:  # industrial_vehicle (placeholder)
+    shape: small_box
+    length: 2.0
+    width: 0.8
+  3:  # pedestrian
+    shape: circle
+    length: null
+    width: 1.0
+  4:  # static
+    shape: tiny_circle
+    length: null
+    width: null
+  5:  # unknown
+    shape: tiny_circle
+    length: null
+    width: null

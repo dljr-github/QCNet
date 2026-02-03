@@ -30,6 +30,7 @@ from tqdm import tqdm
 
 from utils import safe_list_index
 from utils import side_to_directed_lineseg
+from utils import load_dataset_config
 
 try:
     from av2.geometry.interpolate import compute_midpoint_line
@@ -136,10 +137,16 @@ class ArgoverseV2Dataset(Dataset):
             'val': 24988,
             'test': 24984,
         }[split]
-        self._agent_types = ['vehicle', 'pedestrian', 'motorcyclist', 'cyclist', 'bus', 'static', 'background',
-                             'construction', 'riderless_bicycle', 'unknown']
+
+        # Load type definitions from config
+        config = load_dataset_config('argoverse_v2')
+        self._agent_types = config['agent_types']
+        self._polygon_types = config['polygon_types']
+        self._lane_type_mapping = config.get('lane_type_mapping', None)
+        self._agent_type_mapping = config.get('agent_type_mapping', None)
+        self._crosswalk_type = config.get('crosswalk_type', self._polygon_types.index('PEDESTRIAN') if 'PEDESTRIAN' in self._polygon_types else 0)
+
         self._agent_categories = ['TRACK_FRAGMENT', 'UNSCORED_TRACK', 'SCORED_TRACK', 'FOCAL_TRACK']
-        self._polygon_types = ['VEHICLE', 'BIKE', 'BUS', 'PEDESTRIAN']
         self._polygon_is_intersections = [True, False, None]
         self._point_types = ['DASH_SOLID_YELLOW', 'DASH_SOLID_WHITE', 'DASHED_WHITE', 'DASHED_YELLOW',
                              'DOUBLE_SOLID_YELLOW', 'DOUBLE_SOLID_WHITE', 'DOUBLE_DASH_YELLOW', 'DOUBLE_DASH_WHITE',
@@ -245,7 +252,10 @@ class ArgoverseV2Dataset(Dataset):
                 predict_mask[agent_idx, self.num_historical_steps:] = False
 
             agent_id[agent_idx] = track_id
-            agent_type[agent_idx] = self._agent_types.index(track_df['object_type'].values[0])
+            if self._agent_type_mapping is not None:
+                agent_type[agent_idx] = self._agent_type_mapping.get(track_df['object_type'].values[0], 5)  # default to unknown
+            else:
+                agent_type[agent_idx] = self._agent_types.index(track_df['object_type'].values[0])
             agent_category[agent_idx] = track_df['object_category'].values[0]
             position[agent_idx, agent_steps, :2] = torch.from_numpy(np.stack([track_df['position_x'].values,
                                                                               track_df['position_y'].values],
@@ -301,7 +311,10 @@ class ArgoverseV2Dataset(Dataset):
             polygon_orientation[lane_segment_idx] = torch.atan2(centerline[1, 1] - centerline[0, 1],
                                                                 centerline[1, 0] - centerline[0, 0])
             polygon_height[lane_segment_idx] = centerline[1, 2] - centerline[0, 2]
-            polygon_type[lane_segment_idx] = self._polygon_types.index(lane_segment.lane_type.value)
+            if self._lane_type_mapping is not None:
+                polygon_type[lane_segment_idx] = self._lane_type_mapping.get(lane_segment.lane_type.value, 0)
+            else:
+                polygon_type[lane_segment_idx] = self._polygon_types.index(lane_segment.lane_type.value)
             polygon_is_intersection[lane_segment_idx] = self._polygon_is_intersections.index(
                 lane_segment.is_intersection)
 
@@ -348,8 +361,8 @@ class ArgoverseV2Dataset(Dataset):
                                                                                    (start_position - end_position)[0])
             polygon_height[crosswalk_idx] = end_position[2] - start_position[2]
             polygon_height[crosswalk_idx + len(cross_walk_ids)] = start_position[2] - end_position[2]
-            polygon_type[crosswalk_idx] = self._polygon_types.index('PEDESTRIAN')
-            polygon_type[crosswalk_idx + len(cross_walk_ids)] = self._polygon_types.index('PEDESTRIAN')
+            polygon_type[crosswalk_idx] = self._crosswalk_type
+            polygon_type[crosswalk_idx + len(cross_walk_ids)] = self._crosswalk_type
             polygon_is_intersection[crosswalk_idx] = self._polygon_is_intersections.index(None)
             polygon_is_intersection[crosswalk_idx + len(cross_walk_ids)] = self._polygon_is_intersections.index(None)
 

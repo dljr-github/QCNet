@@ -1,0 +1,20 @@
+# Argoverse V2 Dataset Configuration
+# Default values matching original QCNet implementation
+
+agent_types:
+  - vehicle
+  - pedestrian
+  - motorcyclist
+  - cyclist
+  - bus
+  - static
+  - background
+  - construction
+  - riderless_bicycle
+  - unknown
+
+polygon_types:
+  - VEHICLE
+  - BIKE
+  - BUS
+  - PEDESTRIAN

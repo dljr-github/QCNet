@@ -1,0 +1,79 @@
+# Venti3D / MotionDB Dataset Configuration
+# Simplified 2-type polygon system optimized for industrial port environments
+
+agent_types:
+  - vehicle            # 0: tractor, truck, bus, car, car.golfcar, eng_veh.construct*
+  - trailer            # 1: trailer (unique towed dynamics)
+  - industrial_vehicle # 2: eng_veh.forklift*, eng_veh.ech.base, eng_veh
+  - pedestrian         # 3: pedestrian
+  - static             # 4: traffic_cone (stationary objects)
+  - unknown            # 5: reserved for future classes
+
+polygon_types:
+  - VEHICLE
+  - PEDESTRIAN
+
+# Maps Venti3D/MotionDB agent type strings to agent type index
+# Actual MotionDB types only (16 types found in data)
+agent_type_mapping:
+  tractor: 0                # vehicle
+  trailer: 1                # trailer
+  car: 0                    # vehicle
+  car.golfcar: 0            # vehicle
+  truck: 0                  # vehicle
+  eng_veh.forklift: 2       # industrial_vehicle
+  eng_veh.forklift.ext: 2   # industrial_vehicle
+  eng_veh.forklift.large: 2 # industrial_vehicle
+  eng_veh.ech.base: 2       # industrial_vehicle
+  eng_veh: 2                # industrial_vehicle
+  pedestrian: 3             # pedestrian
+  bus: 0                    # vehicle
+  eng_veh.construct: 0      # vehicle
+  eng_veh.construct.ext: 0  # vehicle
+  traffic_cone: 4           # static
+  unknown: 5                # unknown (future)
+
+# Maps MotionDB lane_type (0-9) to polygon type index
+# Simplified: all lanes map to VEHICLE (0), crosswalks to PEDESTRIAN (1)
+lane_type_mapping:
+  0: 0  # LANE_TYPE_FORWARD -> VEHICLE
+  1: 0  # LANE_TYPE_LEFT -> VEHICLE
+  2: 0  # LANE_TYPE_RIGHT -> VEHICLE
+  3: 0  # LANE_TYPE_REVERSE -> VEHICLE
+  4: 0  # LANE_TYPE_LEFT_UNPROTECTED -> VEHICLE
+  5: 0  # LANE_TYPE_YARD_TRAVELLING -> VEHICLE
+  6: 0  # LANE_TYPE_YARD_WORKING -> VEHICLE
+  7: 0  # LANE_TYPE_RIGHT_UNPROTECTED -> VEHICLE
+  8: 0  # LANE_TYPE_LEFT_UTURN -> VEHICLE
+  9: 0  # LANE_TYPE_RIGHT_UTURN -> VEHICLE
+
+crosswalk_type: 1  # PEDESTRIAN
+unknown_type: 0    # VEHICLE (fallback)
+
+# Agent rendering config for visualization
+# Shapes: box, small_box, circle, tiny_circle
+agent_render_config:
+  0:  # vehicle
+    shape: box
+    length: 4.5
+    width: 2.0
+  1:  # trailer
+    shape: box
+    length: 12.0
+    width: 2.5
+  2:  # industrial_vehicle
+    shape: small_box
+    length: 2.0
+    width: 0.8
+  3:  # pedestrian
+    shape: circle
+    length: null
+    width: 1.0
+  4:  # static
+    shape: tiny_circle
+    length: null
+    width: null
+  5:  # unknown
+    shape: tiny_circle
+    length: null
+    width: null

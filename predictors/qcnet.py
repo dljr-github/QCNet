@@ -254,7 +254,7 @@ class QCNet(pl.LightningModule):
                  sync_dist=True)
         self.log('val_cls_loss', cls_loss, prog_bar=True, on_step=False, on_epoch=True, batch_size=1, sync_dist=True)
 
-        if self.dataset == 'argoverse_v2':
+        if self.dataset in ('argoverse_v2', 'venti3d'):
             eval_mask = data['agent']['category'] == 3
         else:
             raise ValueError('{} is not a valid dataset'.format(self.dataset))
@@ -301,7 +301,7 @@ class QCNet(pl.LightningModule):
             traj_refine = torch.cat([pred['loc_refine_pos'][..., :self.output_dim],
                                      pred['scale_refine_pos'][..., :self.output_dim]], dim=-1)
         pi = pred['pi']
-        if self.dataset == 'argoverse_v2':
+        if self.dataset in ('argoverse_v2', 'venti3d'):
             eval_mask = data['agent']['category'] == 3
         else:
             raise ValueError('{} is not a valid dataset'.format(self.dataset))
@@ -319,13 +319,13 @@ class QCNet(pl.LightningModule):
 
         traj_eval = traj_eval.cpu().numpy()
         pi_eval = pi_eval.cpu().numpy()
-        if self.dataset == 'argoverse_v2':
+        if self.dataset in ('argoverse_v2', 'venti3d'):
             eval_id = list(compress(list(chain(*data['agent']['id'])), eval_mask))
             if isinstance(data, Batch):
                 for i in range(data.num_graphs):
-                    self.test_predictions[data['scenario_id'][i]] = (pi_eval[i], {eval_id[i]: traj_eval[i]})
+                    self.test_predictions[data['scenario_id'][i]] = {eval_id[i]: (traj_eval[i], pi_eval[i])}
             else:
-                self.test_predictions[data['scenario_id']] = (pi_eval[0], {eval_id[0]: traj_eval[0]})
+                self.test_predictions[data['scenario_id']] = {eval_id[0]: (traj_eval[0], pi_eval[0])}
         else:
             raise ValueError('{} is not a valid dataset'.format(self.dataset))
 
@@ -333,6 +333,8 @@ class QCNet(pl.LightningModule):
         if self.dataset == 'argoverse_v2':
             ChallengeSubmission(self.test_predictions).to_parquet(
                 Path(self.submission_dir) / f'{self.submission_file_name}.parquet')
+        elif self.dataset == 'venti3d':
+            pass  # No submission generation needed for venti3d
         else:
             raise ValueError('{} is not a valid dataset'.format(self.dataset))
 

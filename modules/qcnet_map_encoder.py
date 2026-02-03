@@ -25,6 +25,7 @@ from utils import angle_between_2d_vectors
 from utils import merge_edges
 from utils import weight_init
 from utils import wrap_angle
+from utils import get_num_polygon_types
 
 
 class QCNetMapEncoder(nn.Module):
@@ -52,7 +53,7 @@ class QCNetMapEncoder(nn.Module):
         self.head_dim = head_dim
         self.dropout = dropout
 
-        if dataset == 'argoverse_v2':
+        if dataset in ('argoverse_v2', 'venti3d'):
             if input_dim == 2:
                 input_dim_x_pt = 1
                 input_dim_x_pl = 0
@@ -68,11 +69,17 @@ class QCNetMapEncoder(nn.Module):
         else:
             raise ValueError('{} is not a valid dataset'.format(dataset))
 
-        if dataset == 'argoverse_v2':
+        if dataset in ('argoverse_v2', 'venti3d'):
+            num_polygon_types = get_num_polygon_types(dataset)
             self.type_pt_emb = nn.Embedding(17, hidden_dim)
             self.side_pt_emb = nn.Embedding(3, hidden_dim)
-            self.type_pl_emb = nn.Embedding(4, hidden_dim)
+            self.type_pl_emb = nn.Embedding(num_polygon_types, hidden_dim)
             self.int_pl_emb = nn.Embedding(3, hidden_dim)
+            if dataset == 'venti3d':
+                self.bidir_pl_emb = nn.Embedding(2, hidden_dim)
+                nn.init.normal_(self.bidir_pl_emb.weight, mean=0.0, std=0.02)
+            else:
+                self.bidir_pl_emb = None
         else:
             raise ValueError('{} is not a valid dataset'.format(dataset))
         self.type_pl2pl_emb = nn.Embedding(5, hidden_dim)
@@ -99,7 +106,7 @@ class QCNetMapEncoder(nn.Module):
         orient_pl = data['map_polygon']['orientation'].contiguous()
         orient_vector_pl = torch.stack([orient_pl.cos(), orient_pl.sin()], dim=-1)
 
-        if self.dataset == 'argoverse_v2':
+        if self.dataset in ('argoverse_v2', 'venti3d'):
             if self.input_dim == 2:
                 x_pt = data['map_point']['magnitude'].unsqueeze(-1)
                 x_pl = None
@@ -112,6 +119,8 @@ class QCNetMapEncoder(nn.Module):
                                      self.side_pt_emb(data['map_point']['side'].long())]
             x_pl_categorical_embs = [self.type_pl_emb(data['map_polygon']['type'].long()),
                                      self.int_pl_emb(data['map_polygon']['is_intersection'].long())]
+            if self.bidir_pl_emb is not None:
+                x_pl_categorical_embs.append(self.bidir_pl_emb(data['map_polygon']['is_bidirectional'].long()))
         else:
             raise ValueError('{} is not a valid dataset'.format(self.dataset))
         x_pt = self.x_pt_emb(continuous_inputs=x_pt, categorical_embs=x_pt_categorical_embs)
